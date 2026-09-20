@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>班级专属匿名投票</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--gray-50);
+      color: var(--gray-800);
+      line-height: 1.5;
+      padding-bottom: 90px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .header-card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      border-left: 5px solid var(--primary);
+    }
+    .header-card h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 8px;
+    }
+    .countdown-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    .rule-tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .rule-tag {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--gray-100);
+      color: var(--gray-600);
+    }
+    .rule-tag.highlight {
+      background: #fee2e2;
+      color: #b91c1c;
+      font-weight: 600;
+    }
+    .auth-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      margin-top: 40px;
+    }
+    .auth-card h2 { font-size: 1.2rem; margin-bottom: 6px; }
+    .auth-card p { color: var(--gray-600); font-size: 0.875rem; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; text-align: left; }
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+    }
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:active { background: var(--primary-hover); }
+    .btn:disabled { background: var(--gray-300); color: var(--gray-600); cursor: not-allowed; }
+    .search-wrapper { margin-bottom: 12px; }
+    .search-input {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--gray-300);
+      font-size: 0.9rem;
+      background: white;
+    }
+    .candidate-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    @media (min-width: 480px) {
+      .candidate-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .candidate-card {
+      background: white;
+      border: 2px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 14px 10px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+    }
+    .candidate-card.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+    .candidate-card .badge-check {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      display: none;
+      color: var(--primary);
+      font-weight: bold;
+    }
+    .candidate-card.selected .badge-check { display: block; }
+    .candidate-card .name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray-800);
+      margin-bottom: 2px;
+    }
+    .candidate-card .sid { font-size: 0.75rem; color: var(--gray-600); }
+    .sticky-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 12px 16px;
+      box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 600px;
+      margin: 0 auto;
+      z-index: 100;
+    }
+    .footer-info { display: flex; flex-direction: column; }
+    .vote-counter { font-size: 0.95rem; font-weight: 700; }
+    .vote-counter span { color: var(--primary); font-size: 1.25rem; }
+    .vote-hint { font-size: 0.75rem; color: var(--gray-600); }
+    .btn-submit {
+      width: auto;
+      min-width: 130px;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.95rem;
+    }
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(17, 24, 39, 0.92);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 0.875rem;
+      z-index: 999;
+      display: none;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+      max-width: 90%;
+    }
+    .voted-done-card {
+      background: white;
+      border-radius: 16px;
+      padding: 30px 20px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      margin-top: 30px;
+    }
+    .voted-icon { font-size: 3rem; color: var(--success); margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="container">
+    <div class="header-card">
+      <h1 id="voteTitle">班级民主推选投票</h1>
+      <div class="rule-tag-container">
+        <span class="rule-tag">每人限投一次</span>
+        <span class="rule-tag highlight">可投 1 ~ 10 人</span>
+        <span class="rule-tag highlight">严禁投本人（已自动过滤）</span>
+        <span class="rule-tag">纯匿名解耦存库</span>
+      </div>
+      <div class="countdown-bar">
+        <span>⏳ 距离投票截止：</span>
+        <span id="countdownText">计算中...</span>
+      </div>
+    </div>
+
+    <!-- 阶段 1：身份核验登录卡片 -->
+    <div id="authSection" class="auth-card">
+      <h2>班级成员身份核验</h2>
+      <p>仅限本班白名单成员参与，一人一票</p>
+      <div class="form-group">
+        <label>学号</label>
+        <input type="text" id="loginStudentId" class="form-control" placeholder="请输入本人学号" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>姓名</label>
+        <input type="text" id="loginName" class="form-control" placeholder="请输入本人姓名" autocomplete="off">
+      </div>
+      <button id="btnLogin" class="btn btn-primary">验证进入投票</button>
+    </div>
+
+    <!-- 阶段 2：投票主界面 -->
+    <div id="voteSection" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="font-size: 0.9rem; color: var(--gray-700);">
+          当前投票人：<strong id="currentVoterName" style="color: var(--primary);"></strong>（本人已自动移出候选）
+        </div>
+        <button id="btnLogout" style="background: none; border: none; color: var(--gray-600); font-size: 0.8rem; text-decoration: underline; cursor: pointer;">退出登录</button>
+      </div>
+
+      <div class="search-wrapper">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 快速搜索同学姓名...">
+      </div>
+
+      <div id="candidateGrid" class="candidate-grid"></div>
+    </div>
+
+    <!-- 阶段 3：已完成投票卡片 -->
+    <div id="votedDoneSection" class="voted-done-card" style="display: none;">
+      <div class="voted-icon">✓</div>
+      <h2 style="margin-bottom: 8px;">投票已完成！</h2>
+      <p style="color: var(--gray-600); font-size: 0.95rem; margin-bottom: 16px;">
+        您已成功行使民主投票权，您的选票数据已完全解耦匿名计入总票池。
+      </p>
+      <div style="background: var(--gray-100); padding: 12px; border-radius: 10px; font-size: 0.85rem; color: var(--gray-700);">
+        提示：投票截止后将由班委公示最终汇总统计。
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部固定栏 -->
+  <div id="stickyFooter" class="sticky-footer" style="display: none;">
+    <div class="footer-info">
+      <div class="vote-counter">已选 <span id="selectedCount">0</span> / 10 人</div>
+      <div class="vote-hint" id="voteHintText">请至少选择 1 人（最多10人）</div>
+    </div>
+    <button id="btnSubmitVote" class="btn btn-primary btn-submit" disabled>提交投票 (0/10)</button>
+  </div>
+
+  <!-- 确认投票 Modal -->
+  <div id="confirmModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px;">
+    <div style="background: white; border-radius: 16px; padding: 20px; max-width: 400px; width: 100%;">
+      <h3 style="margin-bottom: 10px; font-size: 1.15rem;">请确认您推选的同学（共 <span id="confirmCountText">0</span> 位）</h3>
+      <p style="font-size: 0.85rem; color: var(--gray-600); margin-bottom: 14px;">提交后将无法修改，且选票匿名解耦存库。</p>
+      <div id="confirmList" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; max-height: 180px; overflow-y: auto;"></div>
+      <div style="display: flex; gap: 10px;">
+        <button id="btnCancelSubmit" class="btn" style="background: var(--gray-200); color: var(--gray-800);">返回修改</button>
+        <button id="btnConfirmSubmit" class="btn btn-primary">确认并提交</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 云端后端 API 基础地址（已绑定 Render 云服务）
+    let API_BASE = "https://classs-vote.onrender.com";
+
+    let currentUser = null;
+    let candidates = [];
+    let selectedSet = new Set();
+    let remainingSeconds = 0;
+    let countdownTimer = null;
+
+    const toastEl = document.getElementById("toast");
+    const countdownTextEl = document.getElementById("countdownText");
+    const voteTitleEl = document.getElementById("voteTitle");
+    const authSection = document.getElementById("authSection");
+    const voteSection = document.getElementById("voteSection");
+    const votedDoneSection = document.getElementById("votedDoneSection");
+    const stickyFooter = document.getElementById("stickyFooter");
+    const candidateGrid = document.getElementById("candidateGrid");
+    const selectedCountEl = document.getElementById("selectedCount");
+    const voteHintText = document.getElementById("voteHintText");
+    const btnSubmitVote = document.getElementById("btnSubmitVote");
+    const currentVoterName = document.getElementById("currentVoterName");
+    const searchInput = document.getElementById("searchInput");
+    const confirmModal = document.getElementById("confirmModal");
+    const confirmList = document.getElementById("confirmList");
+
+    function showToast(msg, duration = 2500) {
+      toastEl.textContent = msg;
+      toastEl.style.display = "block";
+      setTimeout(() => { toastEl.style.display = "none"; }, duration);
+    }
+
+    function formatTime(secs) {
+      if (secs <= 0) return "已截止";
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = secs % 60;
+      return `${h}小时${m < 10 ? '0' : ''}${m}分${s < 10 ? '0' : ''}${s}秒`;
+    }
+
+    function startCountdown(initialSecs) {
+      remainingSeconds = initialSecs;
+      if (countdownTimer) clearInterval(countdownTimer);
+      countdownTextEl.textContent = formatTime(remainingSeconds);
+      countdownTimer = setInterval(() => {
+        if (remainingSeconds > 0) {
+          remainingSeconds--;
+          countdownTextEl.textContent = formatTime(remainingSeconds);
+        } else {
+          clearInterval(countdownTimer);
+          countdownTextEl.textContent = "已截止";
+          btnSubmitVote.disabled = true;
+          showToast("投票时间已到，投票通道已关闭");
+        }
+      }, 1000);
+    }
+
+    async function checkStatus() {
+      try {
+        const res = await fetch(API_BASE + "/api/status");
+        const data = await res.json();
+        if (data.title) voteTitleEl.textContent = data.title;
+        startCountdown(data.remaining_seconds || 0);
+        if (!data.is_active) {
+          countdownTextEl.textContent = data.message || "投票已截止";
+          btnSubmitVote.disabled = true;
+        }
+      } catch (err) {
+        console.warn("连接投票后台中...", err);
+      }
+    }
+
+    document.getElementById("btnLogin").addEventListener("click", async () => {
+      const studentId = document.getElementById("loginStudentId").value.trim();
+      const name = document.getElementById("loginName").value.trim();
+      if (!studentId || !name) {
+        showToast("请输入完整的学号和姓名");
+        return;
+      }
+      try {
+        const res = await fetch(API_BASE + "/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ student_id: studentId, name: name })
+        });
+        const result = await res.json();
+        if (!result.success) {
+          showToast(result.message);
+          return;
+        }
+        currentUser = { student_id: result.student_id, name: result.name };
+        sessionStorage.setItem("vote_user", JSON.stringify(currentUser));
+        if (result.has_voted) {
+          authSection.style.display = "none";
+          voteSection.style.display = "none";
+          stickyFooter.style.display = "none";
+          votedDoneSection.style.display = "block";
+        } else {
+          currentVoterName.textContent = currentUser.name;
+          authSection.style.display = "none";
+          votedDoneSection.style.display = "none";
+          voteSection.style.display = "block";
+          stickyFooter.style.display = "flex";
+          loadCandidates();
+        }
+      } catch (err) {
+        showToast("无法连接投票服务，请检查网络或后端地址");
+      }
+    });
+
+    async function loadCandidates() {
+      try {
+        const res = await fetch(API_BASE + "/api/candidates");
+        const data = await res.json();
+        if (!data.success) {
+          showToast(data.message);
+          return;
+        }
+        candidates = data.candidates;
+        renderCandidates(candidates);
+      } catch (err) {
+        showToast("获取候选人失败");
+      }
+    }
+
+    function renderCandidates(list) {
+      candidateGrid.innerHTML = "";
+      list.forEach(cand => {
+        const card = document.createElement("div");
+        card.className = "candidate-card" + (selectedSet.has(cand.id) ? " selected" : "");
+        card.dataset.id = cand.id;
+        card.dataset.name = cand.name;
+        card.innerHTML = `
+          <div class="badge-check">✓</div>
+          <div class="name">${cand.name}</div>
+          <div class="sid">${cand.student_id}</div>
+        `;
+        card.addEventListener("click", () => toggleSelectCandidate(cand, card));
+        candidateGrid.appendChild(card);
+      });
+    }
+
+    function toggleSelectCandidate(cand, card) {
+      if (selectedSet.has(cand.id)) {
+        selectedSet.delete(cand.id);
+        card.classList.remove("selected");
+      } else {
+        if (selectedSet.size >= 10) {
+          showToast("已达到 10 票上限，如需更换请先点击取消某位同学");
+          return;
+        }
+        selectedSet.add(cand.id);
+        card.classList.add("selected");
+      }
+      updateSelectionFooter();
+    }
+
+    function updateSelectionFooter() {
+      const count = selectedSet.size;
+      selectedCountEl.textContent = count;
+      btnSubmitVote.textContent = `提交投票 (${count}/10)`;
+      if (count >= 1 && count <= 10) {
+        btnSubmitVote.disabled = false;
+        if (count === 10) {
+          voteHintText.textContent = "已达 10 人上限，可直接提交";
+          voteHintText.style.color = "var(--primary)";
+        } else {
+          voteHintText.textContent = `已选 ${count} 人，可直接提交（最多选10人）`;
+          voteHintText.style.color = "var(--success)";
+        }
+      } else {
+        btnSubmitVote.disabled = true;
+        voteHintText.textContent = "请至少选择 1 位同学（最多10位）";
+        voteHintText.style.color = "var(--gray-600)";
+      }
+    }
+
+    searchInput.addEventListener("input", (e) => {
+      const keyword = e.target.value.trim().toLowerCase();
+      const filtered = candidates.filter(c => 
+        c.name.toLowerCase().includes(keyword) || c.student_id.toLowerCase().includes(keyword)
+      );
+      renderCandidates(filtered);
+    });
+
+    btnSubmitVote.addEventListener("click", () => {
+      if (selectedSet.size < 1 || selectedSet.size > 10) {
+        showToast("请选择 1 至 10 位同学后再提交");
+        return;
+      }
+      const confirmCountEl = document.getElementById("confirmCountText");
+      if (confirmCountEl) confirmCountEl.textContent = selectedSet.size;
+      confirmList.innerHTML = "";
+      selectedSet.forEach(cid => {
+        const cand = candidates.find(c => c.id === cid);
+        if (cand) {
+          const tag = document.createElement("span");
+          tag.style.background = "var(--primary-light)";
+          tag.style.color = "var(--primary)";
+          tag.style.padding = "4px 8px";
+          tag.style.borderRadius = "6px";
+          tag.style.fontSize = "0.85rem";
+          tag.textContent = cand.name;
+          confirmList.appendChild(tag);
+        }
+      });
+      confirmModal.style.display = "flex";
+    });
+
+    document.getElementById("btnCancelSubmit").addEventListener("click", () => {
+      confirmModal.style.display = "none";
+    });
+
+    document.getElementById("btnConfirmSubmit").addEventListener("click", async () => {
+      confirmModal.style.display = "none";
+      btnSubmitVote.disabled = true;
+      try {
+        const res = await fetch(API_BASE + "/api/vote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ selected_ids: Array.from(selectedSet) })
+        });
+        const result = await res.json();
+        if (result.success) {
+          showToast("投票成功！感谢您的参与", 3000);
+          voteSection.style.display = "none";
+          stickyFooter.style.display = "none";
+          votedDoneSection.style.display = "block";
+        } else {
+          showToast(result.message || "提交失败");
+          btnSubmitVote.disabled = false;
+        }
+      } catch (err) {
+        showToast("网络通信失败，请重试");
+        btnSubmitVote.disabled = false;
+      }
+    });
+
+    document.getElementById("btnLogout").addEventListener("click", () => {
+      currentUser = null;
+      selectedSet.clear();
+      voteSection.style.display = "none";
+      stickyFooter.style.display = "none";
+      authSection.style.display = "block";
+      document.getElementById("loginStudentId").value = "";
+      document.getElementById("loginName").value = "";
+    });
+
+    checkStatus();
+  </script>
+</body>
+</html>
