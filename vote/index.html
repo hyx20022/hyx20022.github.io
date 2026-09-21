@@ -240,7 +240,7 @@
       <h1 id="voteTitle">班级民主推选投票</h1>
       <div class="rule-tag-container">
         <span class="rule-tag">每人限投一次</span>
-        <span class="rule-tag highlight">可投 1 ~ 10 人</span>
+        <span id="ruleVoteCountTag" class="rule-tag highlight">可投 1 ~ 9 人</span>
         <span class="rule-tag highlight">严禁投本人（已自动过滤）</span>
         <span class="rule-tag">纯匿名解耦存库</span>
       </div>
@@ -288,8 +288,19 @@
       <p style="color: var(--gray-600); font-size: 0.95rem; margin-bottom: 16px;">
         您已成功行使民主投票权，您的选票数据已完全解耦匿名计入总票池。
       </p>
-      <div style="background: var(--gray-100); padding: 12px; border-radius: 10px; font-size: 0.85rem; color: var(--gray-700);">
-        提示：投票截止后将由班委公示最终汇总统计。
+
+      <!-- 实时投票排行榜展示区 -->
+      <div style="text-align: left; margin-top: 24px; border-top: 1px dashed var(--gray-200); padding-top: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--gray-900);">📊 实时投票数据看板</h3>
+          <button id="btnRefreshResults" style="background: white; border: 1px solid var(--gray-300); padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; color: var(--primary);">🔄 刷新数据</button>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--gray-600); margin-bottom: 14px;">
+          当前已参与投票人数：<strong id="publicVotedCount" style="color: var(--primary);">0</strong> 人（纯匿名汇总）
+        </div>
+        <div id="publicResultsList" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- 动态渲染各候选人得票榜 -->
+        </div>
       </div>
     </div>
   </div>
@@ -297,10 +308,10 @@
   <!-- 底部固定栏 -->
   <div id="stickyFooter" class="sticky-footer" style="display: none;">
     <div class="footer-info">
-      <div class="vote-counter">已选 <span id="selectedCount">0</span> / 10 人</div>
-      <div class="vote-hint" id="voteHintText">请至少选择 1 人（最多10人）</div>
+      <div class="vote-counter">已选 <span id="selectedCount">0</span> / <span id="maxVotesText">9</span> 人</div>
+      <div class="vote-hint" id="voteHintText">请至少选择 1 人（最多9人）</div>
     </div>
-    <button id="btnSubmitVote" class="btn btn-primary btn-submit" disabled>提交投票 (0/10)</button>
+    <button id="btnSubmitVote" class="btn btn-primary btn-submit" disabled>提交投票 (0/9)</button>
   </div>
 
   <!-- 确认投票 Modal -->
@@ -325,6 +336,8 @@
     let selectedSet = new Set();
     let remainingSeconds = 0;
     let countdownTimer = null;
+    let minVotes = 1;
+    let maxVotes = 9;
 
     const toastEl = document.getElementById("toast");
     const countdownTextEl = document.getElementById("countdownText");
@@ -335,6 +348,7 @@
     const stickyFooter = document.getElementById("stickyFooter");
     const candidateGrid = document.getElementById("candidateGrid");
     const selectedCountEl = document.getElementById("selectedCount");
+    const maxVotesTextEl = document.getElementById("maxVotesText");
     const voteHintText = document.getElementById("voteHintText");
     const btnSubmitVote = document.getElementById("btnSubmitVote");
     const currentVoterName = document.getElementById("currentVoterName");
@@ -378,11 +392,20 @@
         const res = await fetch(API_BASE + "/api/status");
         const data = await res.json();
         if (data.title) voteTitleEl.textContent = data.title;
+        if (data.min_votes !== undefined) minVotes = parseInt(data.min_votes);
+        if (data.max_votes !== undefined) maxVotes = parseInt(data.max_votes);
+
+        const tagEl = document.getElementById("ruleVoteCountTag");
+        if (tagEl) tagEl.textContent = `可投 ${minVotes} ~ ${maxVotes} 人`;
+
+        if (maxVotesTextEl) maxVotesTextEl.textContent = maxVotes;
+
         startCountdown(data.remaining_seconds || 0);
         if (!data.is_active) {
           countdownTextEl.textContent = data.message || "投票已截止";
           btnSubmitVote.disabled = true;
         }
+        updateSelectionFooter();
       } catch (err) {
         console.warn("连接投票后台中...", err);
       }
@@ -413,6 +436,7 @@
           voteSection.style.display = "none";
           stickyFooter.style.display = "none";
           votedDoneSection.style.display = "block";
+          loadPublicResults();
         } else {
           currentVoterName.textContent = currentUser.name;
           authSection.style.display = "none";
@@ -428,7 +452,14 @@
 
     async function loadCandidates() {
       try {
-        const res = await fetch(API_BASE + "/api/candidates");
+        const headers = { "Content-Type": "application/json" };
+        if (currentUser && currentUser.student_id) {
+          headers["X-Student-Id"] = currentUser.student_id;
+          headers["X-Student-Name"] = encodeURIComponent(currentUser.name);
+        }
+        const res = await fetch(API_BASE + "/api/candidates" + (currentUser ? `?student_id=${encodeURIComponent(currentUser.student_id)}` : ""), {
+          headers: headers
+        });
         const data = await res.json();
         if (!data.success) {
           showToast(data.message);
@@ -463,8 +494,8 @@
         selectedSet.delete(cand.id);
         card.classList.remove("selected");
       } else {
-        if (selectedSet.size >= 10) {
-          showToast("已达到 10 票上限，如需更换请先点击取消某位同学");
+        if (selectedSet.size >= maxVotes) {
+          showToast(`已达到 ${maxVotes} 票上限，如需更换请先点击取消某位同学`);
           return;
         }
         selectedSet.add(cand.id);
@@ -476,19 +507,19 @@
     function updateSelectionFooter() {
       const count = selectedSet.size;
       selectedCountEl.textContent = count;
-      btnSubmitVote.textContent = `提交投票 (${count}/10)`;
-      if (count >= 1 && count <= 10) {
+      btnSubmitVote.textContent = `提交投票 (${count}/${maxVotes})`;
+      if (count >= minVotes && count <= maxVotes) {
         btnSubmitVote.disabled = false;
-        if (count === 10) {
-          voteHintText.textContent = "已达 10 人上限，可直接提交";
+        if (count === maxVotes) {
+          voteHintText.textContent = `已达 ${maxVotes} 人上限，可直接提交`;
           voteHintText.style.color = "var(--primary)";
         } else {
-          voteHintText.textContent = `已选 ${count} 人，可直接提交（最多选10人）`;
+          voteHintText.textContent = `已选 ${count} 人，可直接提交（最多选${maxVotes}人）`;
           voteHintText.style.color = "var(--success)";
         }
       } else {
         btnSubmitVote.disabled = true;
-        voteHintText.textContent = "请至少选择 1 位同学（最多10位）";
+        voteHintText.textContent = `请至少选择 ${minVotes} 位同学（最多${maxVotes}位）`;
         voteHintText.style.color = "var(--gray-600)";
       }
     }
@@ -502,8 +533,8 @@
     });
 
     btnSubmitVote.addEventListener("click", () => {
-      if (selectedSet.size < 1 || selectedSet.size > 10) {
-        showToast("请选择 1 至 10 位同学后再提交");
+      if (selectedSet.size < minVotes || selectedSet.size > maxVotes) {
+        showToast(`请选择 ${minVotes} 至 ${maxVotes} 位同学后再提交`);
         return;
       }
       const confirmCountEl = document.getElementById("confirmCountText");
@@ -533,10 +564,17 @@
       confirmModal.style.display = "none";
       btnSubmitVote.disabled = true;
       try {
+        const headers = { "Content-Type": "application/json" };
+        if (currentUser && currentUser.student_id) {
+          headers["X-Student-Id"] = currentUser.student_id;
+        }
         const res = await fetch(API_BASE + "/api/vote", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ selected_ids: Array.from(selectedSet) })
+          headers: headers,
+          body: JSON.stringify({
+            student_id: currentUser ? currentUser.student_id : undefined,
+            selected_ids: Array.from(selectedSet)
+          })
         });
         const result = await res.json();
         if (result.success) {
@@ -544,6 +582,7 @@
           voteSection.style.display = "none";
           stickyFooter.style.display = "none";
           votedDoneSection.style.display = "block";
+          loadPublicResults();
         } else {
           showToast(result.message || "提交失败");
           btnSubmitVote.disabled = false;
@@ -553,6 +592,67 @@
         btnSubmitVote.disabled = false;
       }
     });
+
+    async function loadPublicResults() {
+      try {
+        const res = await fetch(API_BASE + "/api/public_results");
+        const json = await res.json();
+        if (!json.success) return;
+        const d = json.data;
+
+        const votedCountEl = document.getElementById("publicVotedCount");
+        if (votedCountEl) votedCountEl.textContent = d.total_voted;
+
+        const listEl = document.getElementById("publicResultsList");
+        if (!listEl) return;
+        listEl.innerHTML = "";
+
+        d.candidates.forEach(c => {
+          const item = document.createElement("div");
+          item.style.background = "white";
+          item.style.padding = "10px 14px";
+          item.style.borderRadius = "10px";
+          item.style.border = "1px solid var(--gray-200)";
+          item.style.display = "flex";
+          item.style.flexDirection = "column";
+          item.style.gap = "6px";
+
+          let rankBadge = `<span style="display:inline-block; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%; font-size:0.75rem; font-weight:700; background:var(--gray-100); color:var(--gray-600); margin-right:6px;">${c.rank}</span>`;
+          if (c.rank === 1) rankBadge = `<span style="display:inline-block; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%; font-size:0.75rem; font-weight:700; background:#fef08a; color:#854d0e; margin-right:6px;">🥇</span>`;
+          else if (c.rank === 2) rankBadge = `<span style="display:inline-block; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%; font-size:0.75rem; font-weight:700; background:#e2e8f0; color:#475569; margin-right:6px;">🥈</span>`;
+          else if (c.rank === 3) rankBadge = `<span style="display:inline-block; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%; font-size:0.75rem; font-weight:700; background:#fed7aa; color:#9a3412; margin-right:6px;">🥉</span>`;
+
+          item.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center;">
+                ${rankBadge}
+                <strong style="color: var(--gray-800); font-size: 0.95rem;">${c.name}</strong>
+              </div>
+              <div style="font-weight: 700; color: var(--primary); font-size: 0.95rem;">
+                ${c.votes_count} <span style="font-size: 0.75rem; font-weight: normal; color: var(--gray-600);">票</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="flex: 1; height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden;">
+                <div style="width: ${c.pct}%; height: 100%; background: var(--primary); border-radius: 3px;"></div>
+              </div>
+              <span style="font-size: 0.75rem; color: var(--gray-600); min-width: 32px; text-align: right;">${c.pct}%</span>
+            </div>
+          `;
+          listEl.appendChild(item);
+        });
+      } catch (err) {
+        console.error("加载公开结果失败", err);
+      }
+    }
+
+    const btnRefreshResults = document.getElementById("btnRefreshResults");
+    if (btnRefreshResults) {
+      btnRefreshResults.addEventListener("click", () => {
+        loadPublicResults();
+        showToast("已刷新最新得票数据");
+      });
+    }
 
     document.getElementById("btnLogout").addEventListener("click", () => {
       currentUser = null;
