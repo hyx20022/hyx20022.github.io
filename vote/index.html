@@ -400,10 +400,12 @@
 
         if (maxVotesTextEl) maxVotesTextEl.textContent = maxVotes;
 
-        startCountdown(data.remaining_seconds || 0);
-        if (!data.is_active) {
+        if (data.is_active) {
+          startCountdown(data.remaining_seconds || 0);
+        } else {
+          if (countdownTimer) clearInterval(countdownTimer);
           countdownTextEl.textContent = data.message || "投票已截止";
-          btnSubmitVote.disabled = true;
+          if (btnSubmitVote) btnSubmitVote.disabled = true;
         }
         updateSelectionFooter();
       } catch (err) {
