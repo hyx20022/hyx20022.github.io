@@ -240,7 +240,7 @@
       <h1 id="voteTitle">班级民主推选投票</h1>
       <div class="rule-tag-container">
         <span class="rule-tag">每人限投一次</span>
-        <span id="ruleVoteCountTag" class="rule-tag highlight">可投 1 ~ 9 人</span>
+        <span id="ruleVoteCountTag" class="rule-tag highlight">只能投 16 人</span>
         <span class="rule-tag highlight">严禁投本人（已自动过滤）</span>
         <span class="rule-tag">纯匿名解耦存库</span>
       </div>
@@ -308,10 +308,10 @@
   <!-- 底部固定栏 -->
   <div id="stickyFooter" class="sticky-footer" style="display: none;">
     <div class="footer-info">
-      <div class="vote-counter">已选 <span id="selectedCount">0</span> / <span id="maxVotesText">9</span> 人</div>
-      <div class="vote-hint" id="voteHintText">请至少选择 1 人（最多9人）</div>
+      <div class="vote-counter">已选 <span id="selectedCount">0</span> / <span id="maxVotesText">16</span> 人</div>
+      <div class="vote-hint" id="voteHintText">必须且只能选择 16 位同学</div>
     </div>
-    <button id="btnSubmitVote" class="btn btn-primary btn-submit" disabled>提交投票 (0/9)</button>
+    <button id="btnSubmitVote" class="btn btn-primary btn-submit" disabled>提交投票 (0/16)</button>
   </div>
 
   <!-- 确认投票 Modal -->
@@ -336,8 +336,8 @@
     let selectedSet = new Set();
     let remainingSeconds = 0;
     let countdownTimer = null;
-    let minVotes = 1;
-    let maxVotes = 9;
+    let minVotes = 16;
+    let maxVotes = 16;
 
     const toastEl = document.getElementById("toast");
     const countdownTextEl = document.getElementById("countdownText");
@@ -396,7 +396,9 @@
         if (data.max_votes !== undefined) maxVotes = parseInt(data.max_votes);
 
         const tagEl = document.getElementById("ruleVoteCountTag");
-        if (tagEl) tagEl.textContent = `可投 ${minVotes} ~ ${maxVotes} 人`;
+        if (tagEl) {
+          tagEl.textContent = (minVotes === maxVotes) ? `只能投 ${maxVotes} 人` : `可投 ${minVotes} ~ ${maxVotes} 人`;
+        }
 
         if (maxVotesTextEl) maxVotesTextEl.textContent = maxVotes;
 
@@ -512,7 +514,10 @@
       btnSubmitVote.textContent = `提交投票 (${count}/${maxVotes})`;
       if (count >= minVotes && count <= maxVotes) {
         btnSubmitVote.disabled = false;
-        if (count === maxVotes) {
+        if (minVotes === maxVotes) {
+          voteHintText.textContent = `已选满 ${maxVotes} 人，可直接提交`;
+          voteHintText.style.color = "var(--success)";
+        } else if (count === maxVotes) {
           voteHintText.textContent = `已达 ${maxVotes} 人上限，可直接提交`;
           voteHintText.style.color = "var(--primary)";
         } else {
@@ -521,7 +526,11 @@
         }
       } else {
         btnSubmitVote.disabled = true;
-        voteHintText.textContent = `请至少选择 ${minVotes} 位同学（最多${maxVotes}位）`;
+        if (minVotes === maxVotes) {
+          voteHintText.textContent = `必须选择 ${minVotes} 位同学（还需选 ${minVotes - count} 位）`;
+        } else {
+          voteHintText.textContent = `请至少选择 ${minVotes} 位同学（最多${maxVotes}位）`;
+        }
         voteHintText.style.color = "var(--gray-600)";
       }
     }
@@ -536,7 +545,11 @@
 
     btnSubmitVote.addEventListener("click", () => {
       if (selectedSet.size < minVotes || selectedSet.size > maxVotes) {
-        showToast(`请选择 ${minVotes} 至 ${maxVotes} 位同学后再提交`);
+        if (minVotes === maxVotes) {
+          showToast(`必须且只能选择 ${minVotes} 位同学后再提交（当前已选 ${selectedSet.size} 位）`);
+        } else {
+          showToast(`请选择 ${minVotes} 至 ${maxVotes} 位同学后再提交`);
+        }
         return;
       }
       const confirmCountEl = document.getElementById("confirmCountText");
