@@ -641,12 +641,11 @@
 
     async function loadStatus() {
       try {
-        let headers = {};
-        if (currentUser) {
-          headers["X-Lottery-Name"] = currentUser.name;
-          headers["X-Lottery-Room"] = currentUser.room;
+        let url = API_BASE + "/api/lottery/status";
+        if (currentUser && currentUser.name && currentUser.room) {
+          url += `?name=${encodeURIComponent(currentUser.name)}&room=${encodeURIComponent(currentUser.room)}`;
         }
-        const res = await fetch(API_BASE + "/api/lottery/status", { headers });
+        const res = await fetch(url);
         const data = await res.json();
         if (data.success) {
           renderPublicSummary(data.summary);
@@ -783,9 +782,7 @@
         const res = await fetch(API_BASE + "/api/lottery/draw", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            "X-Lottery-Name": currentUser.name,
-            "X-Lottery-Room": currentUser.room
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({ name: currentUser.name, room: currentUser.room })
         });
@@ -823,7 +820,8 @@
         btn.disabled = false;
         btn.innerHTML = "<span>🎯 点击开始抽签</span>";
         slotBox.textContent = "????";
-        showToast("网络请求超时，请重试");
+        console.error("抽签异常:", err);
+        showToast("抽签异常: " + (err.message || "网络错误，请重试"));
       }
     });
 
