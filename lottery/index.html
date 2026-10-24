@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>寝室互选抽签系统</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --gray-800: #1e293b;
+      --gray-900: #0f172a;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 50%, #f1f5f9 100%);
+      color: var(--gray-800);
+      line-height: 1.5;
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+    .container {
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 4px 8px;
+    }
+    .nav-link {
+      font-size: 0.85rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 4px 10px;
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .nav-link:hover {
+      background: white;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .header-card {
+      text-align: center;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      border: none;
+      box-shadow: var(--shadow-lg);
+    }
+    .header-card h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .header-card p {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      margin-bottom: 14px;
+    }
+    .rule-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+    }
+    .rule-tag {
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: 0.76rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .rule-tag.highlight {
+      background: #fbbf24;
+      color: #78350f;
+      font-weight: 700;
+      border: none;
+    }
+
+    /* 登录卡片 */
+    .auth-card h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--gray-900);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .auth-card p {
+      font-size: 0.88rem;
+      color: var(--gray-600);
+      margin-bottom: 18px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.86rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--gray-700);
+    }
+    .form-control {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--gray-300);
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.2s;
+      background: var(--gray-50);
+    }
+    .form-control:focus {
+      border-color: var(--primary);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.45);
+    }
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* 抽签主舞台卡片 */
+    .user-info-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--primary-light);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      padding: 10px 14px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .user-badge {
+      font-size: 0.92rem;
+      color: var(--gray-800);
+    }
+    .user-badge strong {
+      color: var(--primary);
+      font-size: 1.02rem;
+    }
+    .btn-logout {
+      background: none;
+      border: none;
+      color: var(--gray-600);
+      font-size: 0.82rem;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .btn-logout:hover {
+      color: var(--danger);
+    }
+
+    /* 抽签机视觉舞台 */
+    .slot-stage {
+      text-align: center;
+      padding: 24px 12px;
+      background: radial-gradient(circle at center, #ffffff 0%, #f8fafc 100%);
+      border: 2px dashed #cbd5e1;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .slot-title {
+      font-size: 0.9rem;
+      color: var(--gray-600);
+      margin-bottom: 14px;
+      font-weight: 500;
+    }
+    .slot-box {
+      width: 220px;
+      height: 100px;
+      margin: 0 auto 18px auto;
+      background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 4px 8px rgba(0,0,0,0.4), 0 8px 20px rgba(79, 70, 229, 0.25);
+      border: 3px solid #fbbf24;
+      position: relative;
+      overflow: hidden;
+    }
+    .slot-number {
+      font-size: 2.8rem;
+      font-weight: 900;
+      font-family: "Courier New", Courier, monospace, sans-serif;
+      color: #fef08a;
+      letter-spacing: 2px;
+      text-shadow: 0 0 12px rgba(250, 204, 21, 0.7);
+      transition: all 0.05s ease;
+    }
+    .slot-hint {
+      font-size: 0.82rem;
+      color: var(--gray-600);
+      margin-top: 6px;
+    }
+
+    /* 抽中展示卡片 */
+    .result-box {
+      text-align: center;
+      padding: 24px 16px;
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+      border: 2px solid #a7f3d0;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .result-icon {
+      font-size: 2.8rem;
+      margin-bottom: 8px;
+    }
+    .result-title {
+      font-size: 1.05rem;
+      color: #065f46;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .result-room-huge {
+      font-size: 3.4rem;
+      font-weight: 900;
+      font-family: "Courier New", Courier, monospace, sans-serif;
+      color: #047857;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+    }
+    .result-time {
+      font-size: 0.82rem;
+      color: #047857;
+      opacity: 0.85;
+    }
+
+    /* 公开进度列表 */
+    .progress-section {
+      margin-top: 10px;
+    }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .progress-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-refresh {
+      background: white;
+      border: 1px solid var(--gray-300);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-refresh:hover {
+      background: var(--gray-50);
+    }
+    .progress-bar-wrapper {
+      height: 10px;
+      background: var(--gray-200);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4f46e5 0%, #10b981 100%);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+    .participant-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .participant-item {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      padding: 10px 12px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .p-info {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+    .p-room {
+      font-size: 0.78rem;
+      color: var(--gray-600);
+      font-weight: normal;
+    }
+    .badge-status {
+      font-size: 0.76rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .badge-done {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .badge-pending {
+      background: var(--gray-200);
+      color: var(--gray-600);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #1f2937;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      z-index: 9999;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+      max-width: 90%;
+      text-align: center;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9998;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="confettiCanvas"></canvas>
+  <div id="toast" class="toast"></div>
+
+  <div class="container">
+    <!-- 顶部导航 -->
+    <div class="top-nav">
+      <a href="/vote/" class="nav-link">🗳️ 返回班级投票</a>
+      <a href="https://classs-vote.onrender.com/lottery/admin" target="_blank" class="nav-link">⚙️ 抽签管理后台</a>
+    </div>
+
+    <!-- 顶部 Header -->
+    <div class="card header-card">
+      <h1>🎯 寝室互选抽签系统</h1>
+      <p>输入姓名与本人寝室号，一键抽取匹配寝室</p>
+      <div class="rule-tags">
+        <span class="rule-tag highlight">规则1：绝不抽本人寝室</span>
+        <span class="rule-tag highlight">规则2：每人限抽1次</span>
+        <span class="rule-tag highlight">规则3：结果互不重复</span>
+        <span class="rule-tag">🔒 纯错位双射 · 隐私保密</span>
+      </div>
+    </div>
+
+    <!-- 阶段 1：身份核验登录卡片 -->
+    <div id="authSection" class="card auth-card">
+      <h2>👤 抽签成员身份核验</h2>
+      <p>请核对并输入您在名单中登记的姓名与寝室号：</p>
+      <div class="form-group">
+        <label>本人姓名</label>
+        <input type="text" id="loginName" class="form-control" placeholder="例如：刘意华" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>本人当前寝室号</label>
+        <input type="text" id="loginRoom" class="form-control" placeholder="例如：1127" autocomplete="off">
+      </div>
+      <button id="btnLogin" class="btn btn-primary">
+        <span>🚀 验证身份并进入抽签</span>
+      </button>
+
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--gray-200); font-size: 0.8rem; color: var(--gray-600); text-align: center;">
+        💡 本次共 8 位成员参与互选，名单预设无误后即可一键抽取
+      </div>
+    </div>
+
+    <!-- 阶段 2：抽签舞台（核验成功后展示） -->
+    <div id="lotterySection" class="card" style="display: none;">
+      <!-- 用户状态栏 -->
+      <div class="user-info-bar">
+        <div class="user-badge">
+          当前用户：<strong id="displayUserName">--</strong>（寝室：<strong id="displayUserRoom">--</strong>）
+        </div>
+        <button id="btnLogout" class="btn-logout">退出</button>
+      </div>
+
+      <!-- 未抽取状态：摇号机交互舞台 -->
+      <div id="pendingStage">
+        <div class="slot-stage">
+          <div class="slot-title">🎲 随机抽签滚轮已就绪</div>
+          <div class="slot-box">
+            <div id="slotNumber" class="slot-number">????</div>
+          </div>
+          <div class="slot-hint">系统已保证：您绝对不会抽到本人的寝室号</div>
+        </div>
+
+        <button id="btnStartDraw" class="btn btn-primary">
+          <span>🎯 点击开始抽签</span>
+        </button>
+      </div>
+
+      <!-- 已完成状态：展示抽中结果 -->
+      <div id="finishedStage" style="display: none;">
+        <div class="result-box">
+          <div class="result-icon">🎉</div>
+          <div class="result-title">恭喜！您抽到的寝室号是</div>
+          <div id="resultRoomNumber" class="result-room-huge">----</div>
+          <div id="resultTime" class="result-time">抽签时间：--</div>
+        </div>
+        <div style="text-align: center; font-size: 0.84rem; color: var(--gray-600); margin-top: 8px;">
+          ✓ 您的抽签结果已固化录入系统，每人仅可抽取一次。
+        </div>
+      </div>
+    </div>
+
+    <!-- 阶段 3：公开实时进度卡片 -->
+    <div class="card progress-section">
+      <div class="progress-header">
+        <div class="progress-title">
+          <span>📊 实时抽签进度</span>
+        </div>
+        <button id="btnRefreshProgress" class="btn-refresh">🔄 刷新</button>
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; font-size: 0.84rem; color: var(--gray-600); margin-bottom: 6px;">
+        <span>抽签进度：<strong id="progressText" style="color: var(--primary);">0 / 8</strong></span>
+        <span>完成率：<strong id="progressPercent" style="color: var(--success);">0%</strong></span>
+      </div>
+      <div class="progress-bar-wrapper">
+        <div id="progressBarFill" class="progress-bar-fill"></div>
+      </div>
+
+      <div id="participantsGrid" class="participant-grid">
+        <!-- JS 动态渲染参与人员及其抽签状态 -->
+      </div>
+
+      <div style="margin-top: 16px; font-size: 0.78rem; color: var(--gray-600); text-align: center;">
+        🔒 为保护大家互选的悬念与隐私，公开榜仅展示是否已抽，不展示具体抽中寝室。
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let API_BASE = "https://classs-vote.onrender.com";
+
+    let currentUser = null;
+    let isDrawing = false;
+    let rollTimer = null;
+    const allKnownRooms = ["1125", "1127", "1128", "1130", "1420", "1422", "1210", "1421"];
+
+    function showToast(msg, duration = 2800) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, duration);
+    }
+
+    function playBeep(freq = 440, duration = 0.05) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playCelebrationFanfare() {
+      try {
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          setTimeout(() => playBeep(freq, 0.25), idx * 120);
+        });
+      } catch (e) {}
+    }
+
+    function triggerConfetti() {
+      const canvas = document.getElementById("confettiCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const colors = ["#4f46e5", "#10b981", "#fbbf24", "#ef4444", "#ec4899", "#8b5cf6"];
+      for (let i = 0; i < 90; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height * 0.45,
+          vx: (Math.random() - 0.5) * 16,
+          vy: (Math.random() - 0.7) * 18,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 10,
+          opacity: 1
+        });
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = false;
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.4;
+          p.opacity -= 0.012;
+          p.rotation += p.rotSpeed;
+
+          if (p.opacity > 0) {
+            alive = true;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.rotation * Math.PI) / 180);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = Math.max(0, p.opacity);
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+            ctx.restore();
+          }
+        });
+
+        if (alive) {
+          requestAnimationFrame(render);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+      requestAnimationFrame(render);
+    }
+
+    async function loadStatus() {
+      try {
+        let headers = {};
+        if (currentUser) {
+          headers["X-Lottery-Name"] = currentUser.name;
+          headers["X-Lottery-Room"] = currentUser.room;
+        }
+        const res = await fetch(API_BASE + "/api/lottery/status", { headers });
+        const data = await res.json();
+        if (data.success) {
+          renderPublicSummary(data.summary);
+          if (data.current_user) {
+            currentUser = data.current_user;
+            showLotteryStage(currentUser);
+          }
+        }
+      } catch (err) {
+        console.error("加载抽签状态失败", err);
+      }
+    }
+
+    function renderPublicSummary(summary) {
+      if (!summary) return;
+      const total = summary.total_count || 8;
+      const drawn = summary.drawn_count || 0;
+      const percent = total > 0 ? Math.round((drawn / total) * 100) : 0;
+
+      document.getElementById("progressText").textContent = `${drawn} / ${total} 人`;
+      document.getElementById("progressPercent").textContent = `${percent}%`;
+      document.getElementById("progressBarFill").style.width = `${percent}%`;
+
+      const grid = document.getElementById("participantsGrid");
+      grid.innerHTML = "";
+
+      (summary.participants || []).forEach(p => {
+        const item = document.createElement("div");
+        item.className = "participant-item";
+        item.innerHTML = `
+          <div>
+            <div class="p-info">${escapeHtml(p.name)}</div>
+            <div class="p-room">寝室：${escapeHtml(p.room)}</div>
+          </div>
+          <div>
+            ${p.has_drawn 
+              ? `<span class="badge-status badge-done">✓ 已完成</span>` 
+              : `<span class="badge-status badge-pending">⏳ 待抽取</span>`}
+          </div>
+        `;
+        grid.appendChild(item);
+      });
+    }
+
+    function showLotteryStage(user) {
+      document.getElementById("authSection").style.display = "none";
+      document.getElementById("lotterySection").style.display = "block";
+
+      document.getElementById("displayUserName").textContent = user.name;
+      document.getElementById("displayUserRoom").textContent = user.room;
+
+      if (user.has_drawn) {
+        document.getElementById("pendingStage").style.display = "none";
+        document.getElementById("finishedStage").style.display = "block";
+        document.getElementById("resultRoomNumber").textContent = user.assigned_room || "----";
+        document.getElementById("resultTime").textContent = `抽签时间：${user.drawn_at || ""}`;
+      } else {
+        document.getElementById("pendingStage").style.display = "block";
+        document.getElementById("finishedStage").style.display = "none";
+        document.getElementById("slotNumber").textContent = "????";
+        document.getElementById("btnStartDraw").disabled = false;
+        document.getElementById("btnStartDraw").innerHTML = "<span>🎯 点击开始抽签</span>";
+      }
+    }
+
+    document.getElementById("btnLogout").addEventListener("click", async () => {
+      try {
+        await fetch(API_BASE + "/api/lottery/logout", { method: "POST" });
+      } catch (e) {}
+      currentUser = null;
+      document.getElementById("lotterySection").style.display = "none";
+      document.getElementById("authSection").style.display = "block";
+      document.getElementById("loginName").value = "";
+      document.getElementById("loginRoom").value = "";
+      showToast("已退出登录");
+      loadStatus();
+    });
+
+    document.getElementById("btnLogin").addEventListener("click", async () => {
+      const name = document.getElementById("loginName").value.trim();
+      const room = document.getElementById("loginRoom").value.trim();
+
+      if (!name || !room) {
+        showToast("请输入完整的姓名和寝室号！");
+        return;
+      }
+
+      const btn = document.getElementById("btnLogin");
+      btn.disabled = true;
+      btn.innerHTML = "<span>🔄 正在核验名单...</span>";
+
+      try {
+        const res = await fetch(API_BASE + "/api/lottery/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, room })
+        });
+        const data = await res.json();
+        if (data.success && data.user) {
+          currentUser = data.user;
+          showToast(`核验成功，欢迎 ${currentUser.name}！`);
+          showLotteryStage(currentUser);
+          loadStatus();
+        } else {
+          showToast(data.message || "核验失败，请核对姓名与寝室号！");
+        }
+      } catch (err) {
+        showToast("网络请求失败，请检查连接");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>🚀 验证身份并进入抽签</span>";
+      }
+    });
+
+    document.getElementById("btnStartDraw").addEventListener("click", async () => {
+      if (isDrawing || !currentUser) return;
+      isDrawing = true;
+
+      const btn = document.getElementById("btnStartDraw");
+      btn.disabled = true;
+      btn.innerHTML = "<span>🎲 正在为您快速抽取中...</span>";
+
+      const candidateRooms = allKnownRooms.filter(r => r !== currentUser.room);
+      const slotBox = document.getElementById("slotNumber");
+
+      let rollIndex = 0;
+      rollTimer = setInterval(() => {
+        rollIndex = (rollIndex + 1) % candidateRooms.length;
+        slotBox.textContent = candidateRooms[rollIndex];
+        playBeep(320 + (rollIndex * 25), 0.04);
+      }, 70);
+
+      try {
+        const res = await fetch(API_BASE + "/api/lottery/draw", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Lottery-Name": currentUser.name,
+            "X-Lottery-Room": currentUser.room
+          },
+          body: JSON.stringify({ name: currentUser.name, room: currentUser.room })
+        });
+        const data = await res.json();
+
+        setTimeout(() => {
+          clearInterval(rollTimer);
+
+          if (data.success && data.assigned_room) {
+            slotBox.textContent = data.assigned_room;
+            playCelebrationFanfare();
+            triggerConfetti();
+
+            currentUser.has_drawn = true;
+            currentUser.assigned_room = data.assigned_room;
+            currentUser.drawn_at = data.drawn_at;
+
+            setTimeout(() => {
+              showLotteryStage(currentUser);
+              showToast(`🎉 恭喜！您抽到的寝室号是：【 ${data.assigned_room} 】`, 4000);
+              loadStatus();
+            }, 600);
+          } else {
+            showToast(data.message || "抽签异常，请联系管理员");
+            slotBox.textContent = "????";
+            btn.disabled = false;
+            btn.innerHTML = "<span>🎯 点击开始抽签</span>";
+          }
+          isDrawing = false;
+        }, 1800);
+
+      } catch (err) {
+        clearInterval(rollTimer);
+        isDrawing = false;
+        btn.disabled = false;
+        btn.innerHTML = "<span>🎯 点击开始抽签</span>";
+        slotBox.textContent = "????";
+        showToast("网络请求超时，请重试");
+      }
+    });
+
+    document.getElementById("btnRefreshProgress").addEventListener("click", () => {
+      loadStatus();
+      showToast("已刷新最新抽签进度");
+    });
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    loadStatus();
+    setInterval(loadStatus, 10000);
+  </script>
+</body>
+</html>
