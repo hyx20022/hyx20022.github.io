@@ -473,8 +473,8 @@
         <span>🚀 验证身份并进入抽签</span>
       </button>
 
-      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--gray-200); font-size: 0.8rem; color: var(--gray-600); text-align: center;">
-        💡 本次共 8 位成员参与互选，名单预设无误后即可一键抽取
+      <div id="rosterHint" style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--gray-200); font-size: 0.8rem; color: var(--gray-600); text-align: center;">
+        💡 本次共 9 位成员参与互选，名单预设无误后即可一键抽取
       </div>
     </div>
 
@@ -550,7 +550,7 @@
     let currentUser = null;
     let isDrawing = false;
     let rollTimer = null;
-    const allKnownRooms = ["1125", "1127", "1128", "1130", "1420", "1422", "1210", "1421"];
+    let allKnownRooms = ["1125", "1127", "1128", "1130", "1420", "1422", "1210", "1421", "1423"];
 
     function showToast(msg, duration = 2800) {
       const toast = document.getElementById("toast");
@@ -661,9 +661,17 @@
 
     function renderPublicSummary(summary) {
       if (!summary) return;
-      const total = summary.total_count || 8;
+      const total = summary.total_count || 9;
       const drawn = summary.drawn_count || 0;
       const percent = total > 0 ? Math.round((drawn / total) * 100) : 0;
+
+      if (summary.participants && summary.participants.length > 0) {
+        allKnownRooms = summary.participants.map(p => p.room);
+      }
+      const hintElem = document.getElementById("rosterHint");
+      if (hintElem) {
+        hintElem.textContent = `💡 本次共 ${total} 位成员参与互选，名单预设无误后即可一键抽取`;
+      }
 
       document.getElementById("progressText").textContent = `${drawn} / ${total} 人`;
       document.getElementById("progressPercent").textContent = `${percent}%`;
